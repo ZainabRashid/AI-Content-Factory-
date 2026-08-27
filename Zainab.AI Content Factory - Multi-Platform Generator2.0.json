@@ -1,0 +1,1489 @@
+{
+  "name": "Zainab.AI Content Factory - Multi-Platform Generator2.0",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "7e1718ec-adeb-4ec7-86ca-4e7acf251b86",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    topic: $json.topic,\n    audience: $json.audience,\n    businessType: $json.businessType,\n    language: $json.language,\n    tone: $json.tone,\n    length: $json.length\n  }\n}];"
+      },
+      "id": "b21a1f1f-15ba-4722-9027-50622911ab9b",
+      "name": "Validate & Set Defaults",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an elite AI Content Marketing Strategist working for a premium digital marketing agency.\n\nYour responsibility is to create HIGH-CONVERTING marketing content for businesses.\n\nYou are an expert in:\n\n• SEO\n• Copywriting\n• Social Media Marketing\n• Storytelling\n• Brand Voice\n• Digital Marketing\n• Content Repurposing\n\n=========================\nBUSINESS INFORMATION\n=========================\n\nTopic:\n{{$json.topic}}\n\nTarget Audience:\n{{$json.audience}}\n\nBusiness Type:\n{{$json.businessType}}\n\nLanguage:\n{{$json.language}}\n\nTone:\n{{$json.tone}}\n\nLength:\n{{$json.length}}\n\n=========================\nTASK\n=========================\n\nGenerate a complete content package.\n\nThe content must be unique, engaging, SEO optimized and human-like.\n\nGenerate ALL of the following:\n\n1. SEO Blog Article\n2. LinkedIn Post\n3. Instagram Caption\n4. Facebook Post\n5. Twitter/X Thread\n6. YouTube Description\n7. SEO Title\n8. Meta Description\n9. Focus Keywords\n10. 15 Trending Hashtags\n11. Call To Action\n\n=========================\nIMPORTANT\n=========================\n\nWrite naturally.\n\nDo not repeat sentences.\n\nDo not mention AI.\n\nOptimize for engagement.\n\nOptimize for conversions.\n\nOptimize for SEO.\n\n=========================\nOUTPUT FORMAT\n=========================\n\nReturn ONLY valid JSON.\n\n{\n\"blog\":\"\",\n\"linkedin\":\"\",\n\"instagram\":\"\",\n\"facebook\":\"\",\n\"twitter\":\"\",\n\"youtube\":\"\",\n\"seo_title\":\"\",\n\"meta_description\":\"\",\n\"focus_keywords\":[],\n\"hashtags\":[],\n\"cta\":\"\"\n}\n\nReturn nothing except JSON.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "id": "e74a41a0-2deb-4eb1-8b82-561b5929a940",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -64,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "9ab534b1-1aa5-4a20-af5b-ec2f57980abc",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        192
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "fNi2qYUxYooCVU6k",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nlet text =\n  response.text ||\n  response.output ||\n  response.response ||\n  response.content ||\n  response.result ||\n  \"\";\n\ntext = text.replace(/```json/g, \"\");\ntext = text.replace(/```/g, \"\");\ntext = text.trim();\n\n// Convert escaped newlines into real newlines\ntext = text.replace(/\\\\n/g, \"\\n\");\n\n// Remove escaped quotes if needed\ntext = text.replace(/\\\\\"/g, '\"');\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(text);\n} catch (e) {\n  return [\n    {\n      json: {\n        error: e.message,\n        raw_output: text\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "id": "714124ca-67bb-4909-9403-6817d4d8f9a2",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n\n      topic: $('Validate & Set Defaults').first().json.topic,\n      audience: $('Validate & Set Defaults').first().json.audience,\n      businessType: $('Validate & Set Defaults').first().json.businessType,\n      language: $('Validate & Set Defaults').first().json.language,\n      tone: $('Validate & Set Defaults').first().json.tone,\n      length: $('Validate & Set Defaults').first().json.length,\n\n      blog: data.blog,\n      linkedin: data.linkedin,\n      instagram: data.instagram,\n      facebook: data.facebook,\n      twitter: data.twitter,\n      youtube: data.youtube,\n\n      seo_title: data.seo_title,\n      meta_description: data.meta_description,\n\n      keywords: Array.isArray(data.focus_keywords)\n        ? data.focus_keywords.join(\", \")\n        : \"\",\n\n      hashtags: Array.isArray(data.hashtags)\n        ? data.hashtags.join(\" \")\n        : \"\",\n\n      cta: data.cta,\n\n      reel_script: data.reel_script,\n      carousel: data.carousel,\n      newsletter: data.newsletter,\n      email: data.email,\n      short_post: data.short_post\n    }\n  }\n];"
+      },
+      "id": "f28364b6-7863-424b-b30d-0583eae99104",
+      "name": "Prepare output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://image.pollinations.ai/prompt/{{encodeURIComponent($json.topic + \" marketing image for \" + $json.audience + \", premium business style, high quality\")}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        304
+      ],
+      "id": "4ba75500-c33b-48cb-9f50-3960429e0c84",
+      "name": "Generate AI Image"
+    },
+    {
+      "parameters": {
+        "name": "={{$binary.data.fileName}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1V3SJF_jYsKfOCRV42xvxlzAtc31Ca2x1",
+          "mode": "list",
+          "cachedResultName": "AI Content Factory",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1V3SJF_jYsKfOCRV42xvxlzAtc31Ca2x1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        704,
+        304
+      ],
+      "id": "a74e17e1-306a-4c13-9bf3-9a4bbc865821",
+      "name": "Upload AI Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "wA4uJoFAUnC0BN5F",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        928,
+        64
+      ],
+      "id": "52a954cc-800b-4333-957c-b2a446b4cd27",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "fNi2qYUxYooCVU6k",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nlet text =\n  response.text ||\n  response.output ||\n  response.response ||\n  response.content ||\n  response.result ||\n  \"\";\n\ntext = text.replace(/```json/g, \"\");\ntext = text.replace(/```/g, \"\");\ntext = text.trim();\n\nreturn [\n{\njson: JSON.parse(text)\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -144
+      ],
+      "id": "3f186981-7afc-46f1-ada1-d64368b4ef9b",
+      "name": "Parse Repurposed Content"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert content repurposing specialist.\n\nConvert the following blog into five marketing assets.\n\nBLOG\n\n{{$('Prepare output').first().json.blog}}\n\nIMPORTANT RULES\n\nReturn ONLY valid JSON.\n\nDo not use markdown.\n\nDo not use ```.\n\nDo not add explanations.\n\nEvery value MUST be a plain text string.\n\nDo NOT return nested objects.\n\nDo NOT return arrays.\n\nThe \"reel_script\" must be one complete text.\n\nThe \"carousel\" must be one complete text formatted like this:\n\nTitle: ...\n\nDescription: ...\n\nSlide 1:\n...\n\nSlide 2:\n...\n\nSlide 3:\n...\n\nThe \"newsletter\" must be one complete text.\n\nThe \"email\" must be one complete text including the subject.\n\nThe \"short_post\" must be one complete text.\n\nReturn EXACTLY this JSON:\n\n{\n  \"reel_script\":\"Hook:\\n...\\n\\nScene 1:\\n...\\n\\nScene 2:\\n...\\n\\nCTA:\\n...\",\n  \"carousel\":\"Title: ...\\n\\nDescription: ...\\n\\nSlide 1:\\n...\\n\\nSlide 2:\\n...\\n\\nSlide 3:\\n...\",\n  \"newsletter\":\"Title: ...\\n\\n...\",\n  \"email\":\"Subject: ...\\n\\nHello,\\n\\n...\",\n  \"short_post\":\"...\"\n}\n\nReturn NOTHING except valid JSON.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1024,
+        -144
+      ],
+      "id": "ea8099af-4f66-4949-8da7-a179693adb32",
+      "name": "Content Repurposer"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        912,
+        288
+      ],
+      "id": "fc536aed-cc65-4653-b8b9-6411ba1314ba",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "18xfbnI4mPzOnUR85M4FoVfxDngIVTuOiMWYp-5PCd_Y",
+          "mode": "list",
+          "cachedResultName": "Ai content Factory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18xfbnI4mPzOnUR85M4FoVfxDngIVTuOiMWYp-5PCd_Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18xfbnI4mPzOnUR85M4FoVfxDngIVTuOiMWYp-5PCd_Y/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reel Script": "={{ $json.reel_script }}",
+            "Carousel": "={{ $json.carousel }}",
+            "Newsletter": "={{ $json.newsletter }}",
+            "Email": "={{ $json.email }}",
+            "Short Post": "={{ $json.short_post }}",
+            "Timestamp": "={{ $('Generate AI Image').item.json.timestamp }}",
+            "Topic": "={{ $('Generate AI Image').item.json.topic }}",
+            "Audience": "={{ $('Generate AI Image').item.json.audience }}",
+            "Business Type": "={{ $('Generate AI Image').item.json.businessType }}",
+            "Blog": "={{ $('Generate AI Image').item.json.blog }}",
+            "LinkedIn": "={{ $('Generate AI Image').item.json.linkedin }}",
+            "Instagram": "={{ $('Generate AI Image').item.json.instagram }}",
+            "Facebook": "={{ $('Generate AI Image').item.json.facebook }}",
+            "Twitter": "={{ $('Generate AI Image').item.json.twitter }}",
+            "YouTube": "={{ $('Generate AI Image').item.json.youtube }}",
+            "SEO Title": "={{ $('Generate AI Image').item.json.seo_title }}",
+            "Meta Description": "={{ $('Generate AI Image').item.json.meta_description }}",
+            "Keywords": "={{ $('Generate AI Image').item.json.keywords }}",
+            "Hashtags": "={{ $('Generate AI Image').item.json.hashtags }}",
+            "CTA": "={{ $('Generate AI Image').item.json.cta }}",
+            "Image URL": "={{ $('Upload AI Image').first().json.webViewLink }}",
+            "Status": "Scheduled",
+            "Platform": "LinkedIn, Instagram, Facebook, Twitter/X, YouTube",
+            "Published At": "={{$now}}",
+            "Views": "0",
+            "Likes": "0",
+            "Comments": "0",
+            "Shares": "0"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Audience",
+              "displayName": "Audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business Type",
+              "displayName": "Business Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Blog",
+              "displayName": "Blog",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn",
+              "displayName": "LinkedIn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook",
+              "displayName": "Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Twitter",
+              "displayName": "Twitter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "YouTube",
+              "displayName": "YouTube",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEO Title",
+              "displayName": "SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meta Description",
+              "displayName": "Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image URL",
+              "displayName": "Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reel Script",
+              "displayName": "Reel Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Carousel",
+              "displayName": "Carousel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Newsletter",
+              "displayName": "Newsletter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Short Post",
+              "displayName": "Short Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published At",
+              "displayName": "Published At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Views",
+              "displayName": "Views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clicks",
+              "displayName": "Clicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1584,
+        432
+      ],
+      "id": "9a72d2bd-23c4-4c18-a9fd-84b1047f6e8e",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zItxmkwT65qHcMDZ",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "c610c4ed7df056ceae7e7e9846f966cfc7b6c2e3eeff2813cf26f78d08b7853d@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Ai content factory"
+        },
+        "start": "={{$now.plus({days:1}).set({hour:9,minute:0}).toISO()}}",
+        "end": "={{$now.plus({days:1}).set({hour:9,minute:30}).toISO()}}",
+        "additionalFields": {
+          "description": "=Platform:\nLinkedIn\nInstagram\nFacebook\nTwitter/X\n\nContent:\n{{\n\"Platform:\\nLinkedIn\\nInstagram\\nFacebook\\nTwitter/X\\n\\nContent Generated Successfully\\n\\nTopic: \"\n+ $('Validate & Set Defaults').first().json.topic\n+ \"\\n\\nStatus: Scheduled\"\n}}\n\nStatus:\nScheduled",
+          "location": "AI Content Factory",
+          "summary": "={{\"AI Content - \" + $('Prepare output').first().json.topic}}",
+          "visibility": "default"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1568,
+        288
+      ],
+      "id": "ff836feb-3259-4ba0-84e3-bf3ee08c2807",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "sp1D2CpANKpF0VwP",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "zainihumayoun27@gmail.com",
+        "subject": "={{\"AI Content Package Ready - \" + $('Prepare output').first().json.topic}}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<style>\nbody{\n    font-family:Arial,Helvetica,sans-serif;\n    background:#f4f6f9;\n    margin:0;\n    padding:20px;\n}\n.container{\n    max-width:900px;\n    margin:auto;\n    background:#ffffff;\n    border-radius:12px;\n    overflow:hidden;\n    box-shadow:0 5px 20px rgba(0,0,0,.1);\n}\n.header{\n    background:#1F2937;\n    color:white;\n    text-align:center;\n    padding:35px;\n}\n.header h1{\n    margin:0;\n}\n.section{\n    padding:25px;\n    border-bottom:1px solid #eeeeee;\n}\nh2{\n    color:#2563EB;\n}\n.card{\n    background:#F8FAFC;\n    border-left:5px solid #2563EB;\n    padding:15px;\n    margin:12px 0;\n    border-radius:6px;\n}\npre{\n    white-space:pre-wrap;\n    word-wrap:break-word;\n    background:#f5f5f5;\n    padding:12px;\n    border-radius:6px;\n}\ntable{\n    width:100%;\n    border-collapse:collapse;\n}\ntd{\n    border:1px solid #ddd;\n    padding:10px;\n}\n.footer{\n    background:#1F2937;\n    color:white;\n    text-align:center;\n    padding:20px;\n}\na.button{\n    background:#2563EB;\n    color:white !important;\n    padding:12px 20px;\n    text-decoration:none;\n    border-radius:6px;\n    display:inline-block;\n}\n</style>\n</head>\n\n<body>\n\n<div class=\"container\">\n\n<div class=\"header\">\n<h1>🚀 AI Content Package Ready</h1>\n<p>Your complete AI Marketing Content has been generated successfully.</p>\n</div>\n\n<div class=\"section\">\n\n<h2>📌 Project Details</h2>\n\n<table>\n<tr>\n<td><b>Topic</b></td>\n<td>{{$('Prepare output').first().json.topic}}</td>\n</tr>\n\n<tr>\n<td><b>Audience</b></td>\n<td>{{$('Prepare output').first().json.audience}}</td>\n</tr>\n\n<tr>\n<td><b>Business Type</b></td>\n<td>{{$('Prepare output').first().json.businessType}}</td>\n</tr>\n\n<tr>\n<td><b>Language</b></td>\n<td>{{$('Prepare output').first().json.language}}</td>\n</tr>\n\n<tr>\n<td><b>Tone</b></td>\n<td>{{$('Prepare output').first().json.tone}}</td>\n</tr>\n\n<tr>\n<td><b>Generated</b></td>\n<td>{{$now}}</td>\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"section\">\n\n<h2>🔍 SEO</h2>\n\n<div class=\"card\">\n<b>SEO Title</b><br><br>\n{{$('Prepare output').first().json.seo_title}}\n</div>\n\n<div class=\"card\">\n<b>Meta Description</b><br><br>\n{{$('Prepare output').first().json.meta_description}}\n</div>\n\n<div class=\"card\">\n<b>Keywords</b><br><br>\n{{$('Prepare output').first().json.keywords}}\n</div>\n\n</div>\n\n<div class=\"section\">\n\n<h2>📝 Blog</h2>\n\n<pre>{{$('Prepare output').first().json.blog}}</pre>\n\n</div>\n\n<div class=\"section\">\n\n<h2>💼 LinkedIn</h2>\n\n<pre>{{$('Prepare output').first().json.linkedin}}</pre>\n\n<h2>📸 Instagram</h2>\n\n<pre>{{$('Prepare output').first().json.instagram}}</pre>\n\n<h2>📘 Facebook</h2>\n\n<pre>{{$('Prepare output').first().json.facebook}}</pre>\n\n<h2>🐦 Twitter / X</h2>\n\n<pre>{{$('Prepare output').first().json.twitter}}</pre>\n\n<h2>▶️ YouTube Description</h2>\n\n<pre>{{$('Prepare output').first().json.youtube}}</pre>\n\n</div>\n\n<div class=\"section\">\n\n<h2>🎬 Reel Script</h2>\n\n<pre>{{$('Merge').first().json.reel_script}}</pre>\n\n<h2>🎠 Carousel</h2>\n\n<pre>{{$('Merge').first().json.carousel}}</pre>\n\n<h2>📰 Newsletter</h2>\n\n<pre>{{$('Merge').first().json.newsletter}}</pre>\n\n<h2>📧 Email Copy</h2>\n\n<pre>{{$('Merge').first().json.email}}</pre>\n\n<h2>📢 Short Post</h2>\n\n<pre>{{$('Merge').first().json.short_post}}</pre>\n\n</div>\n\n<div class=\"section\">\n\n<h2>🏷 Trending Hashtags</h2>\n\n<div class=\"card\">\n{{$('Prepare output').first().json.hashtags}}\n</div>\n\n<h2>📢 Call To Action</h2>\n\n<div class=\"card\">\n{{$('Prepare output').first().json.cta}}\n</div>\n\n</div>\n\n<div class=\"section\">\n\n<h2>🎨 AI Generated Image</h2>\n\n<p>\n<a class=\"button\" href=\"https://drive.google.com/file/d/{{$json.id}}/view\" target=\"_blank\">\nView Generated Image\n</a>\n</p>\n\n</div>\n\n<div class=\"section\">\n\n<h2>📅 Publishing Status</h2>\n\n<table>\n\n<tr>\n<td>Status</td>\n<td>✅ Scheduled</td>\n</tr>\n\n<tr>\n<td>Platforms</td>\n<td>LinkedIn • Instagram • Facebook • Twitter/X • YouTube</td>\n</tr>\n\n<tr>\n<td>Workflow</td>\n<td>AI Content Factory</td>\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"footer\">\n\n<h2>🤖 AI Content Factory</h2>\n\n<p>\nThis content package was generated automatically using AI.\n</p>\n\n<p>\nPowered by n8n Automation\n</p>\n\n</div>\n\n</div>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        144
+      ],
+      "id": "59a50cfa-60a0-4283-aaea-1d2f2cfeec11",
+      "name": "Send a message",
+      "webhookId": "5c375909-a00f-41e1-9761-ffb34bfd402d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6l5438mhaK3GQfg4",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "content_factory",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{$now}}"
+            },
+            {
+              "fieldId": "topic",
+              "fieldValue": "={{ $('Prepare output').item.json.topic }}"
+            },
+            {
+              "fieldId": "audience",
+              "fieldValue": "={{ $('Prepare output').item.json.audience }}"
+            },
+            {
+              "fieldId": "business_type",
+              "fieldValue": "={{ $('Prepare output').item.json.businessType }}"
+            },
+            {
+              "fieldId": "blog",
+              "fieldValue": "={{ $('Prepare output').item.json.blog }}"
+            },
+            {
+              "fieldId": "linkedin",
+              "fieldValue": "={{ $('Prepare output').item.json.linkedin }}"
+            },
+            {
+              "fieldId": "instagram",
+              "fieldValue": "={{ $('Prepare output').item.json.instagram }}"
+            },
+            {
+              "fieldId": "facebook",
+              "fieldValue": "={{ $('Prepare output').item.json.facebook }}"
+            },
+            {
+              "fieldId": "twitter",
+              "fieldValue": "={{ $('Prepare output').item.json.twitter }}"
+            },
+            {
+              "fieldId": "youtube",
+              "fieldValue": "={{ $('Prepare output').item.json.youtube }}"
+            },
+            {
+              "fieldId": "seo_title",
+              "fieldValue": "={{ $('Prepare output').item.json.seo_title }}"
+            },
+            {
+              "fieldId": "meta_description",
+              "fieldValue": "={{ $('Prepare output').item.json.meta_description }}"
+            },
+            {
+              "fieldId": "keywords",
+              "fieldValue": "={{ $('Prepare output').item.json.keywords }}"
+            },
+            {
+              "fieldId": "hashtags",
+              "fieldValue": "={{ $('Prepare output').item.json.hashtags }}"
+            },
+            {
+              "fieldId": "cta",
+              "fieldValue": "={{ $('Prepare output').item.json.cta }}"
+            },
+            {
+              "fieldId": "image_url",
+              "fieldValue": "={{ $('Upload AI Image').first().json.webContentLink }}"
+            },
+            {
+              "fieldId": "reel_script",
+              "fieldValue": "={{ $json.reel_script }}"
+            },
+            {
+              "fieldId": "carousel",
+              "fieldValue": "={{ $json.carousel }}"
+            },
+            {
+              "fieldId": "newsletter",
+              "fieldValue": "={{ $json.newsletter }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "short_post",
+              "fieldValue": "={{ $json.short_post }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        560
+      ],
+      "id": "721444f2-a0bc-4856-af5c-2eb17c2c2f85",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "tHqAeZefz5I11trT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nconst carousel = data.carousel || {};\nconst slides = Array.isArray(carousel.slides) ? carousel.slides : [];\n\nconst carouselText = `\nTitle: ${carousel.title || \"\"}\n\nDescription:\n${carousel.description || \"\"}\n\nSlides:\n${slides.map((s, i) => `${i + 1}. ${s.title || \"\"}\\n${s.description || \"\"}`).join(\"\\n\\n\")}\n`.trim();\n\nconst newsletterText = `\n${data.newsletter?.title || \"\"}\n\n${data.newsletter?.content || \"\"}\n`.trim();\n\nconst emailText = `\nSubject: ${data.email?.subject || \"\"}\n\n${data.email?.body || \"\"}\n`.trim();\n\nreturn [\n{\njson:{\n...data,\ncarousel_text: carouselText,\nnewsletter_text: newsletterText,\nemail_text: emailText\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -144
+      ],
+      "id": "e83bb612-5c25-4c1c-bcf7-236477026f02",
+      "name": "Format Repurposed Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "topic-match",
+              "name": "topic_to_update",
+              "type": "string",
+              "value": "AI Automation"
+            },
+            {
+              "id": "views",
+              "name": "Views",
+              "type": "string",
+              "value": "0"
+            },
+            {
+              "id": "likes",
+              "name": "Likes",
+              "type": "string",
+              "value": "0"
+            },
+            {
+              "id": "comments",
+              "name": "Comments",
+              "type": "string",
+              "value": "0"
+            },
+            {
+              "id": "shares",
+              "name": "Shares",
+              "type": "string",
+              "value": "0"
+            },
+            {
+              "id": "reach",
+              "name": "Reach",
+              "type": "string",
+              "value": "0"
+            },
+            {
+              "id": "clicks",
+              "name": "Clicks",
+              "type": "string",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e6cd33c4-eede-4ae7-822e-9010b45cba14",
+      "name": "Enter Real Metrics",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "18xfbnI4mPzOnUR85M4FoVfxDngIVTuOiMWYp-5PCd_Y",
+          "mode": "list",
+          "cachedResultName": "Ai content Factory"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.topic_to_update }}",
+            "Views": "={{ $json.Views }}",
+            "Likes": "={{ $json.Likes }}",
+            "Comments": "={{ $json.Comments }}",
+            "Shares": "={{ $json.Shares }}",
+            "Reach": "={{ $json.Reach }}",
+            "Clicks": "={{ $json.Clicks }}",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Audience",
+              "displayName": "Audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business Type",
+              "displayName": "Business Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Blog",
+              "displayName": "Blog",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn",
+              "displayName": "LinkedIn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook",
+              "displayName": "Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Twitter",
+              "displayName": "Twitter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "YouTube",
+              "displayName": "YouTube",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SEO Title",
+              "displayName": "SEO Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meta Description",
+              "displayName": "Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image URL",
+              "displayName": "Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reel Script",
+              "displayName": "Reel Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Carousel",
+              "displayName": "Carousel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Newsletter",
+              "displayName": "Newsletter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Short Post",
+              "displayName": "Short Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Published At",
+              "displayName": "Published At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Views",
+              "displayName": "Views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Clicks",
+              "displayName": "Clicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "topic_to_update",
+              "displayName": "topic_to_update",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c2d6d235-fcd6-46ec-b253-8857567b2ff3",
+      "name": "Update Analytics in Sheet1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -416,
+        784
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zItxmkwT65qHcMDZ",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "vid",
+              "name": "video_id",
+              "type": "string",
+              "value": "dQw4w9WgXcQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ca1ec1f-36d8-480c-b9c1-c92dbcb23b01",
+      "name": "Enter YouTube Video ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "statistics,snippet"
+            },
+            {
+              "name": "id",
+              "value": "dQw4w9WgXcQ"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyBP7q4qZ3jQk4-UU3qyEQ4zFtYpze2fmq8"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "33ff6e19-e3e8-4417-bc6b-42c15da3e41a",
+      "name": "Fetch YouTube Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json.items[0];\nconst stats = item.statistics;\nconst title = item.snippet.title;\n\nreturn [\n  {\n    json: {\n      topic_to_update: title,\n      Views: stats.viewCount || \"0\",\n      Likes: stats.likeCount || \"0\",\n      Comments: stats.commentCount || \"0\",\n      Shares: \"0\",\n      Reach: \"0\",\n      Clicks: \"0\"\n    }\n  }\n];"
+      },
+      "id": "6a304041-eb24-4536-b5aa-5882a06122c7",
+      "name": "Extract Real Numbers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5fa4c51e-eb6c-437d-8cbf-94423024d078",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -576,
+        -144
+      ],
+      "id": "0fe4cefb-131f-4864-a2d3-e9d80e6b5061",
+      "name": "Webhook",
+      "webhookId": "5fa4c51e-eb6c-437d-8cbf-94423024d078"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1456,
+        976
+      ],
+      "id": "7a570b5a-e1b8-4666-a5f4-e571db0794ce",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    },
+    "Validate & Set Defaults": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare output": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Content Repurposer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Image": {
+      "main": [
+        [
+          {
+            "node": "Upload AI Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload AI Image": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Repurposer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Repurposer": {
+      "main": [
+        [
+          {
+            "node": "Parse Repurposed Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Repurposed Content": {
+      "main": [
+        [
+          {
+            "node": "Format Repurposed Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        []
+      ]
+    },
+    "Create an event": {
+      "main": [
+        []
+      ]
+    },
+    "Format Repurposed Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enter Real Metrics": {
+      "main": [
+        [
+          {
+            "node": "Update Analytics in Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enter YouTube Video ID": {
+      "main": [
+        [
+          {
+            "node": "Fetch YouTube Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YouTube Stats": {
+      "main": [
+        [
+          {
+            "node": "Extract Real Numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate & Set Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Real Numbers": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b97cbeb5-bd38-482c-ab87-543a3b3c11ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cc17c783da51f4ab861a557f3a8dab50f7434423091cf287ac056c9ae43215ec"
+  },
+  "nodeGroups": [],
+  "id": "fxnQcWT9MrruSHDI",
+  "tags": []
+}
